@@ -1,7 +1,6 @@
 import * as React from "react";
-import { Field, Control, Panel, PanelHeading, PanelBlock, Notification, Container } from "bloomer";
+import { Field, Control, Panel, PanelHeading, PanelBlock, Notification, Container, Icon } from "bloomer";
 import MonacoEditor from "react-monaco-editor";
-import { Button } from "bloomer/lib/elements/Button";
 import { U8G2 } from "./U8G2";
 
 interface UiEditorState {
@@ -77,10 +76,9 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
             ctx.fillStyle = "#000000";
             ctx.fillRect(0, 0, this.state.lcdSize.width, this.state.lcdSize.height);
 
-            const u8g2: U8G2 = new U8G2(ctx);
-            u8g2.setDrawColor(0);
+            const u8g2: U8G2 = new U8G2(ctx, 0, this.state.lcdSize.width, this.state.lcdSize.height);
             const transpiled = this.transpile(this.state.code);
-            // console.log(transpiled);
+
             try {
 
                 const result = eval("(function() { " + transpiled + "return draw;})");
@@ -102,7 +100,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     renderDisplay = () => {
         return (
             <Panel>
-                <PanelHeading>Display</PanelHeading>
+                <PanelHeading><Icon className="fa fa-tv" /> Display</PanelHeading>
                 <PanelBlock>
                     <canvas className="lcd-canvas" ref={c => {
                         if (c) {
@@ -130,7 +128,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     renderCodeEditor = () => {
         return (
             <Panel>
-                <PanelHeading>Code</PanelHeading>
+                <PanelHeading><Icon className="fa fa-code" /> Code (C++)</PanelHeading>
                 <Field>
                     {/* <Label></Label> */}
                     <Control>
@@ -151,7 +149,23 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                         />
                     </Control>
                 </Field>
-                <Button onClick={this.redraw}>Run</Button>
+                {/* <Button onClick={this.redraw}>Run</Button> */}
+            </Panel>
+        );
+    }
+
+    renderDocumentation = () => {
+        return (
+            <Panel>
+                <PanelHeading><Icon className="fa fa-file-alt" /> Documentation</PanelHeading>
+                <p>The following functions are supported:</p>
+                <ul>
+                    {
+                        Object.getOwnPropertyNames(U8G2.prototype).sort().filter(p => p !== "constructor").map(p => {
+                            return <li key={p}><a href={"https://github.com/olikraus/u8g2/wiki/u8g2reference#" + p} target="_blank">{p}</a></li>;
+                        })
+                    }
+                </ul>
             </Panel>
         );
     }
@@ -161,6 +175,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
             <div className="main">
                 {this.renderDisplay()}
                 {this.renderCodeEditor()}
+                {this.renderDocumentation()}
             </div>
         );
     }

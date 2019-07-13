@@ -8,14 +8,15 @@ $primary: #00979d;
 $blue: #00979d;
 
 .main {
-    width: auto;
-    margin-right: 20px;
-    margin-left: 20px;
+    max-width: 800px;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 10px;
 }
 
 .lcd-canvas {
     border:8px solid #225a94;
-    image-rendering: crisp-edges;
+    image-rendering: pixelated;
 }
 
 @import "../node_modules/bulma/bulma";
