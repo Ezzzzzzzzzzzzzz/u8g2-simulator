@@ -1,17 +1,68 @@
 import * as React from "react";
-import { Field, Control, Panel, PanelHeading, PanelBlock, Notification, Container, Icon } from "bloomer";
+import {
+    Panel, PanelHeading,
+    PanelBlock, Notification, Container, Icon, Dropdown, DropdownTrigger,
+    Button, DropdownItem, DropdownContent, DropdownMenu, Column, Columns
+} from "bloomer";
 import MonacoEditor from "react-monaco-editor";
 import { U8G2 } from "./U8G2";
+import { Display } from "./UiEditorApi";
 
 interface UiEditorState {
     code: string;
     lastChange: number;
     saveEnabled: boolean;
     codeEditor: monaco.editor.ICodeEditor | null;
-    lcdSize: { width: number, height: number };
+    display: Display;
     lcdReady: boolean;
     errorMsg: string;
+    displayDropdownActive: boolean;
 }
+
+const oled128x64: Display = {
+    name: "OLED 128x64",
+    width: 128,
+    height: 64,
+    resetColor: 0,
+    getColorValue: (color: number) => {
+        switch (color) {
+            case 0: return "#000000";
+            case 1: return "#ffffff";
+            default:
+                return "#FF0000";
+        }
+    }
+};
+const oled128x32: Display = {
+    name: "OLED 128x32",
+    width: 128,
+    height: 32,
+    resetColor: 0,
+    getColorValue: (color: number) => {
+        switch (color) {
+            case 0: return "#000000";
+            case 1: return "#ffffff";
+            default:
+                return "#FF0000";
+        }
+    }
+};
+const nokia5110: Display = {
+    name: "Nokia 5110",
+    width: 84,
+    height: 48,
+    resetColor: 0,
+    getColorValue: (color: number) => {
+        switch (color) {
+            case 0: return "#616A4B";
+            case 1: return "#222222";
+            default:
+                return "#FF0000";
+        }
+    }
+};
+
+const displays = [oled128x64, oled128x32, nokia5110];
 
 export class UiEditor extends React.Component<{}, UiEditorState> {
     canvas: CanvasRenderingContext2D | null = null;
@@ -39,14 +90,26 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
             lastChange: Date.now(),
             saveEnabled: true,
             codeEditor: null,
-            lcdSize: { width: 128, height: 64 },
+            display: oled128x64,
+            displayDropdownActive: false,
             lcdReady: false,
             errorMsg: ""
         };
+        this.toggleDisplaySelector = this.toggleDisplaySelector.bind(this);
     }
 
     componentDidMount() {
         this.redraw();
+    }
+
+    setDisplay(d: Display) {
+        this.toggleDisplaySelector();
+        this.setState({ display: d, lcdReady: false });
+        this.redraw();
+    }
+
+    toggleDisplaySelector() {
+        this.setState(prevState => ({ displayDropdownActive: !prevState.displayDropdownActive }));
     }
 
     transpile(code: string) {
@@ -70,13 +133,13 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
         return lines.join("\n");
     }
 
-    redraw = () => {
+    redraw() {
         if (this.canvas) {
             const ctx = this.canvas;
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(0, 0, this.state.lcdSize.width, this.state.lcdSize.height);
+            ctx.fillStyle = this.state.display.getColorValue(this.state.display.resetColor);
+            ctx.fillRect(0, 0, this.state.display.width, this.state.display.height);
 
-            const u8g2: U8G2 = new U8G2(ctx, 0, this.state.lcdSize.width, this.state.lcdSize.height);
+            const u8g2: U8G2 = new U8G2(ctx, this.state.display);
             const transpiled = this.transpile(this.state.code);
 
             try {
@@ -100,10 +163,14 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     renderDisplay = () => {
         return (
             <Panel>
-                <PanelHeading><Icon className="fa fa-tv" /> Display</PanelHeading>
+                <PanelHeading><Icon className="fa fa-tv" /> Display ({this.state.display.name})</PanelHeading>
+                <PanelBlock>
+                    {this.renderDisplaySelector()}
+                </PanelBlock>
                 <PanelBlock>
                     <canvas className="lcd-canvas" ref={c => {
                         if (c) {
+                            console.log("assigned canvas");
                             this.canvas = c.getContext("2d");
                             if (this.canvas && !this.state.lcdReady) {
                                 this.canvas.scale(2, 2);
@@ -112,9 +179,9 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
                         }
                     }
-                    } width={this.state.lcdSize.width * 2} height={this.state.lcdSize.height * 2} />
+                    } width={this.state.display.width * 2} height={this.state.display.height * 2} />
                     {this.state.errorMsg ?
-                        <Container>
+                        <Container className="padLeft">
                             <Notification>
                                 {this.state.errorMsg}
                             </Notification>
@@ -129,26 +196,24 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
         return (
             <Panel>
                 <PanelHeading><Icon className="fa fa-code" /> Code (C++)</PanelHeading>
-                <Field>
+                <PanelBlock>
                     {/* <Label></Label> */}
-                    <Control>
-                        <MonacoEditor
-                            width="100%"
-                            height="500"
-                            language="cpp"
-                            theme="vs-light"
-                            value={this.state.code}
-                            options={{
-                                selectOnLineNumbers: true
-                            }}
-                            onChange={this.onCodeChange}
-                            editorDidMount={(editor: monaco.editor.ICodeEditor) => {
-                                editor.focus();
-                                this.setState({ codeEditor: editor });
-                            }}
-                        />
-                    </Control>
-                </Field>
+                    <MonacoEditor
+                        width="100%"
+                        height="500"
+                        language="cpp"
+                        theme="vs-light"
+                        value={this.state.code}
+                        options={{
+                            selectOnLineNumbers: true
+                        }}
+                        onChange={this.onCodeChange}
+                        editorDidMount={(editor: monaco.editor.ICodeEditor) => {
+                            editor.focus();
+                            this.setState({ codeEditor: editor });
+                        }}
+                    />
+                </PanelBlock>
                 {/* <Button onClick={this.redraw}>Run</Button> */}
             </Panel>
         );
@@ -157,25 +222,55 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     renderDocumentation = () => {
         return (
             <Panel>
-                <PanelHeading><Icon className="fa fa-file-alt" /> Documentation</PanelHeading>
-                <p>The following functions are supported:</p>
-                <ul>
-                    {
-                        Object.getOwnPropertyNames(U8G2.prototype).sort().filter(p => p !== "constructor").map(p => {
-                            return <li key={p}><a href={"https://github.com/olikraus/u8g2/wiki/u8g2reference#" + p} target="_blank">{p}</a></li>;
-                        })
-                    }
-                </ul>
+                <PanelHeading><Icon className="fa fa-file" /> Documentation</PanelHeading>
+                <PanelBlock>The following functions are supported:</PanelBlock>
+                <PanelBlock>
+                    <br />
+                    <ul>
+                        {
+                            Object.getOwnPropertyNames(U8G2.prototype).sort().filter(p => p !== "constructor").map(p => {
+                                return <li key={p}><a href={"https://github.com/olikraus/u8g2/wiki/u8g2reference#" + p} target="_blank">{p}</a></li>;
+                            })
+                        }
+                    </ul>
+                </PanelBlock>
             </Panel>
+        );
+    }
+
+    renderDisplaySelector = () => {
+        return (
+            <Dropdown isActive={this.state.displayDropdownActive}>
+                <DropdownTrigger>
+                    <Button onClick={this.toggleDisplaySelector} isOutlined aria-haspopup="true" aria-controls="dropdown-menu">
+                        <span>Select</span>
+                        <Icon className="fa fa-angle-down" isSize="small" />
+                    </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                    <DropdownContent>
+                        {
+                            displays.map(d => <DropdownItem key={d.name} onClick={() => this.setDisplay(d)}>{d.name}</DropdownItem>
+                            )
+                        }
+                    </DropdownContent>
+                </DropdownMenu>
+            </Dropdown >
         );
     }
 
     render() {
         return (
             <div className="main">
-                {this.renderDisplay()}
-                {this.renderCodeEditor()}
-                {this.renderDocumentation()}
+                <Columns isCentered>
+                    <Column isSize="3/4">
+                        {this.renderDisplay()}
+                        {this.renderCodeEditor()}
+                    </Column>
+                    <Column isSize="1/4">
+                        {this.renderDocumentation()}
+                    </Column>
+                </Columns>
             </div>
         );
     }

@@ -7,16 +7,22 @@
 $primary: #00979d;
 $blue: #00979d;
 
+
 .main {
-    max-width: 800px;
-    margin-right: auto;
+    max-width: 1200px;
     margin-left: auto;
+    margin-right: auto;
     padding: 10px;
 }
 
+
 .lcd-canvas {
-    border:8px solid #225a94;
+    border: 8px solid #225a94;
     image-rendering: pixelated;
+}
+
+.padLeft {
+    padding-left: 10px;
 }
 
 @import "../node_modules/bulma/bulma";
