@@ -85,6 +85,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 "\n" +
                 "\n    drawBox(u8g2, 10, 10, 10, 10);" +
                 "\n    drawBox(u8g2, 30, 10, 10, 10);" +
+                "\n    u8g2.drawCircle(64,32,12, U8G2_DRAW_LOWER_RIGHT);"+
                 "\n}"
             ,
             lastChange: Date.now(),
@@ -105,7 +106,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     setDisplay(d: Display) {
         this.toggleDisplaySelector();
         this.setState({ display: d, lcdReady: false });
-        this.redraw();
+       setTimeout(() => this.onCodeChange(this.state.code), 100);
     }
 
     toggleDisplaySelector() {
@@ -127,6 +128,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 line = line.replace(new RegExp("int ", "g"), "var ");
                 line = line.replace(new RegExp("float ", "g"), "var ");
             }
+            line = line.replace(new RegExp("(U8G2_[a-zA-Z0-9_-]*)", "g"), "\"$1\"");
             return line;
         });
 
@@ -141,7 +143,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
             const u8g2: U8G2 = new U8G2(ctx, this.state.display);
             const transpiled = this.transpile(this.state.code);
-
+            console.log(transpiled);
             try {
 
                 const result = eval("(function() { " + transpiled + "return draw;})");
