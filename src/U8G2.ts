@@ -7,8 +7,34 @@ export type CIRC_OPT =
     "U8G2_DRAW_LOWER_RIGHT" |
     "U8G2_DRAW_ALL";
 
+const adobeFontMapper = (font: string) => {
+    // u8g2_font_[]_tf
+    const parts = font.split("_");
+    let f = parts[2];
+    let fontName = "Courier";
+    if (f.startsWith("cour")) {
+        fontName = "Courier";
+        f = f.substring(4);
+    } else if (f.startsWith("helv")) {
+        fontName = "Helvetica";
+        f = f.substring(4);
+    } else if (f.startsWith("tim")) {
+        fontName = "Times New Roman";
+        f = f.substring(3);
+    }
+
+    if (f.startsWith("B")) {
+        return "bold " + f.split("B")[1] + "px " + fontName;
+    } else if (f.startsWith("R")) {
+        return f.split("R")[1] + "px " + fontName;
+    }
+
+    return "08px Courier";
+};
+
 export class U8G2 {
     private drawColor = 0;
+    private font: string = adobeFontMapper("u8g2_font_courR08_tf");
 
     constructor(private ctx: CanvasRenderingContext2D, private display: Display) {
         this.ctx.lineWidth = 1;
@@ -152,6 +178,21 @@ export class U8G2 {
         this.drawDisk(x + r, y + r, r, "U8G2_DRAW_UPPER_LEFT");
         this.drawDisk(x + r, y + h - r, r, "U8G2_DRAW_LOWER_LEFT");
         this.drawDisk(x + w - r, y + h - r, r, "U8G2_DRAW_LOWER_RIGHT");
+    }
+
+    drawTriangle(x0: number, y0: number, x1: number, y1: number, x2: number, y2: number) {
+        this.drawLine(x0, y0, x1, y1);
+        this.drawLine(x1, y1, x2, y2);
+        this.drawLine(x2, y2, x0, y0);
+    }
+
+    setFont(font: string) {
+        this.font = adobeFontMapper(font);
+    }
+
+    drawString(x: number, y: number, str: string) {
+        this.ctx.font = this.font;
+        this.ctx.fillText(str, x, y);
     }
 
     setDrawColor(color: number) {

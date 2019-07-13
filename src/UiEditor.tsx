@@ -129,6 +129,8 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 line = line.replace(new RegExp("float ", "g"), "var ");
             }
             line = line.replace(new RegExp("(U8G2_[a-zA-Z0-9_-]*)", "g"), "\"$1\"");
+            line = line.replace(new RegExp("(u8g2_font_[a-zA-Z0-9_-]*)", "g"), "\"$1\"");
+
             return line;
         });
 
