@@ -85,7 +85,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 "\n" +
                 "\n    drawBox(u8g2, 10, 10, 10, 10);" +
                 "\n    drawBox(u8g2, 30, 10, 10, 10);" +
-                "\n    u8g2.drawCircle(64,32,12, U8G2_DRAW_LOWER_RIGHT);"+
+                "\n    u8g2.drawRBox(64,32,12, 24, 4);" +
                 "\n}"
             ,
             lastChange: Date.now(),
@@ -106,7 +106,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     setDisplay(d: Display) {
         this.toggleDisplaySelector();
         this.setState({ display: d, lcdReady: false });
-       setTimeout(() => this.onCodeChange(this.state.code), 100);
+        setTimeout(() => this.onCodeChange(this.state.code), 100);
     }
 
     toggleDisplaySelector() {
