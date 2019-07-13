@@ -14,7 +14,8 @@ $blue: #00979d;
 }
 
 .lcd-canvas {
-    border:1px solid #000000
+    border:8px solid #225a94;
+    image-rendering: crisp-edges;
 }
 
 @import "../node_modules/bulma/bulma";

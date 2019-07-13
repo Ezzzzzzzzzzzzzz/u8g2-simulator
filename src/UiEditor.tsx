@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Field, Control, Panel, PanelHeading, PanelBlock } from "bloomer";
+import { Field, Control, Panel, PanelHeading, PanelBlock, Notification, Container } from "bloomer";
 import MonacoEditor from "react-monaco-editor";
 import { Button } from "bloomer/lib/elements/Button";
 import { U8G2 } from "./U8G2";
@@ -10,6 +10,8 @@ interface UiEditorState {
     saveEnabled: boolean;
     codeEditor: monaco.editor.ICodeEditor | null;
     lcdSize: { width: number, height: number };
+    lcdReady: boolean;
+    errorMsg: string;
 }
 
 export class UiEditor extends React.Component<{}, UiEditorState> {
@@ -38,7 +40,9 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
             lastChange: Date.now(),
             saveEnabled: true,
             codeEditor: null,
-            lcdSize: { width: 128, height: 64 }
+            lcdSize: { width: 128, height: 64 },
+            lcdReady: false,
+            errorMsg: ""
         };
     }
 
@@ -56,6 +60,10 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 line = line.replace(new RegExp("void", "g"), "function");
                 line = line.replace(new RegExp("U8G2 u8g2", "g"), "u8g2");
                 line = line.replace(new RegExp("int ", "g"), "");
+                line = line.replace(new RegExp("float ", "g"), "");
+            } else {
+                line = line.replace(new RegExp("int ", "g"), "var ");
+                line = line.replace(new RegExp("float ", "g"), "var ");
             }
             return line;
         });
@@ -67,15 +75,21 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
         if (this.canvas) {
             const ctx = this.canvas;
             ctx.fillStyle = "#000000";
-            ctx.fillRect(0, 0, 100, 100);
+            ctx.fillRect(0, 0, this.state.lcdSize.width, this.state.lcdSize.height);
 
             const u8g2: U8G2 = new U8G2(ctx);
             u8g2.setDrawColor(0);
             const transpiled = this.transpile(this.state.code);
-            console.log(transpiled);
-            const result = eval("(function() { " + transpiled + "return draw;})");
-            if (result) {
-                result()(u8g2);
+            // console.log(transpiled);
+            try {
+
+                const result = eval("(function() { " + transpiled + "return draw;})");
+                if (result) {
+                    result()(u8g2);
+                    this.setState({ errorMsg: "" });
+                }
+            } catch (e) {
+                this.setState({ errorMsg: e.name + ":\n\n" + e.message });
             }
         }
     }
@@ -93,9 +107,21 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                     <canvas className="lcd-canvas" ref={c => {
                         if (c) {
                             this.canvas = c.getContext("2d");
+                            if (this.canvas && !this.state.lcdReady) {
+                                this.canvas.scale(2, 2);
+                                this.setState({ lcdReady: true });
+                            }
+
                         }
                     }
-                    } width={this.state.lcdSize.width} height={this.state.lcdSize.height} />
+                    } width={this.state.lcdSize.width * 2} height={this.state.lcdSize.height * 2} />
+                    {this.state.errorMsg ?
+                        <Container>
+                            <Notification>
+                                {this.state.errorMsg}
+                            </Notification>
+                        </Container> : ""
+                    }
                 </PanelBlock>
             </Panel>
         );
