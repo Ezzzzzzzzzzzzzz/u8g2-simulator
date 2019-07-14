@@ -66,12 +66,12 @@ export class U8G2 {
             this.drawPixel(x0 - y, y0 - x);
         }
 
-        if (option === "U8G2_DRAW_LOWER_LEFT" || option === "U8G2_DRAW_ALL") {
+        if (option === "U8G2_DRAW_LOWER_RIGHT" || option === "U8G2_DRAW_ALL") {
             this.drawPixel(x0 + x, y0 + y);
             this.drawPixel(x0 + y, y0 + x);
         }
 
-        if (option === "U8G2_DRAW_LOWER_RIGHT" || option === "U8G2_DRAW_ALL") {
+        if (option === "U8G2_DRAW_LOWER_LEFT" || option === "U8G2_DRAW_ALL") {
             this.drawPixel(x0 - x, y0 + y);
             this.drawPixel(x0 - y, y0 + x);
         }
@@ -285,14 +285,63 @@ export class U8G2 {
     }
 
     drawRFrame(x: number, y: number, w: number, h: number, r: number) {
-        this.drawVLine(x, y + r, h - 2 * r);
-        this.drawVLine(x + w, y + r, h - 2 * r);
-        this.drawHLine(x + r, y, w - 2 * r);
-        this.drawHLine(x + r, y + h, w - 2 * r);
-        this.drawCircle(x + w - r, y + r, r, "U8G2_DRAW_UPPER_RIGHT");
-        this.drawCircle(x + r, y + r, r, "U8G2_DRAW_UPPER_LEFT");
-        this.drawCircle(x + w - r, y + h - r, r, "U8G2_DRAW_LOWER_LEFT");
-        this.drawCircle(x + r, y + h - r, r, "U8G2_DRAW_LOWER_RIGHT");
+
+        let xl;
+        let yu;
+
+        xl = x;
+        xl += r;
+        yu = y;
+        yu += r;
+
+        {
+            let yl;
+            let xr;
+
+            xr = x;
+            xr += w;
+            xr -= r;
+            xr -= 1;
+
+            yl = y;
+            yl += h;
+            yl -= r;
+            yl -= 1;
+
+            this.drawCircle(xl, yu, r, "U8G2_DRAW_UPPER_LEFT");
+            this.drawCircle(xr, yu, r, "U8G2_DRAW_UPPER_RIGHT");
+            this.drawCircle(xl, yl, r, "U8G2_DRAW_LOWER_LEFT");
+            this.drawCircle(xr, yl, r, "U8G2_DRAW_LOWER_RIGHT");
+        }
+
+        {
+            let ww;
+            let hh;
+
+            ww = w;
+            ww -= r;
+            ww -= r;
+            hh = h;
+            hh -= r;
+            hh -= r;
+
+            xl++;
+            yu++;
+
+            if (ww >= 3) {
+                ww -= 2;
+                h--;
+                this.drawHLine(xl, y, ww);
+                this.drawHLine(xl, y + h, ww);
+            }
+
+            if (hh >= 3) {
+                hh -= 2;
+                w--;
+                this.drawVLine(x, yu, hh);
+                this.drawVLine(x + w, yu, hh);
+            }
+        }
     }
 
     drawRBox(x: number, y: number, w: number, h: number, r: number) {
