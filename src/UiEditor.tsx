@@ -2,7 +2,7 @@ import * as React from "react";
 import {
     Panel, PanelHeading,
     PanelBlock, Notification, Container, Icon, Dropdown, DropdownTrigger,
-    Button, DropdownItem, DropdownContent, DropdownMenu, Column, Columns
+    Button, DropdownItem, DropdownContent, DropdownMenu, Column, Columns, Tile, Box, Title
 } from "bloomer";
 import MonacoEditor from "react-monaco-editor";
 import { U8G2 } from "./U8G2";
@@ -217,44 +217,78 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
     renderDisplay = () => {
         return (
-            <Panel>
-                <PanelHeading><Icon className="fa fa-tv" /> Display ({this.state.display.name})</PanelHeading>
-                <PanelBlock>
-                    {this.renderDisplaySelector()}
-                </PanelBlock>
-                <PanelBlock>
-                    <canvas className="lcd-canvas" ref={c => {
-                        if (c) {
-                            this.canvas = c;
-                            this.ctx = c.getContext("2d");
-                            if (this.ctx && !this.state.lcdReady) {
-                                this.setState({ lcdReady: true });
-                            }
+            <div>
+                <Panel>
+                    <PanelHeading><Icon className="fa fa-tv" /> Display ({this.state.display.name})</PanelHeading>
+                    <PanelBlock>
+                        {this.renderDisplaySelector()}
+                    </PanelBlock>
+                    <PanelBlock>
+                        <Tile isAncestor>
+                            <Tile isSize={4} isVertical isParent>
+                                <Tile isChild render={
+                                    (props: any) => (
+                                        <Box {...props}>
+                                            <Title>1:1</Title>
+                                            <canvas className="lcd-canvas" ref={c => {
+                                                if (c) {
+                                                    this.canvas = c;
+                                                    this.ctx = c.getContext("2d");
+                                                    if (this.ctx && !this.state.lcdReady) {
+                                                        this.setState({ lcdReady: true });
+                                                    }
 
-                        }
-                    }
-                    } width={this.state.display.width} height={this.state.display.height} />
-                    <canvas className="lcd-canvas-scaled" ref={c => {
-                        if (c) {
-                            this.canvasX2 = c;
-                        }
-                    }
-                    } width={this.state.display.width * 2} height={this.state.display.height * 2} />
-                    <canvas className="lcd-canvas-scaled" ref={c => {
-                        if (c) {
-                            this.canvasX4 = c;
-                        }
-                    }
-                    } width={this.state.display.width * 4} height={this.state.display.height * 4} />
-                    {this.state.errorMsg ?
-                        <Container className="padLeft">
-                            <Notification>
-                                {this.state.errorMsg}
-                            </Notification>
-                        </Container> : ""
-                    }
-                </PanelBlock>
-            </Panel>
+                                                }
+                                            }
+                                            } width={this.state.display.width} height={this.state.display.height} />
+                                        </Box>
+                                    )
+                                } />
+                                <Tile isChild render={
+                                    (props: any) => (
+                                        <Box {...props}>
+                                            <Title>1:2</Title>
+                                            <canvas className="lcd-canvas-scaled" ref={c => {
+                                                if (c) {
+                                                    this.canvasX2 = c;
+                                                }
+                                            }
+                                            } width={this.state.display.width * 2} height={this.state.display.height * 2} />                                    </Box>
+                                    )
+                                } />
+                            </Tile>
+                            <Tile isParent>
+                                <Tile isChild render={
+                                    (props: any) => (
+                                        <Box {...props}>
+                                            <Title>1:4</Title>
+                                            <canvas className="lcd-canvas-scaled" ref={c => {
+                                                if (c) {
+                                                    this.canvasX4 = c;
+                                                }
+                                            }
+                                            } width={this.state.display.width * 4} height={this.state.display.height * 4} />
+                                        </Box>
+                                    )
+                                } />
+                            </Tile>
+                        </Tile>
+                    </PanelBlock>
+                </Panel>
+                {this.state.errorMsg ?
+                    <Panel>
+                        <PanelHeading>Error</PanelHeading>
+                        <PanelBlock>
+                            <Container className="padLeft">
+                                <Notification>
+                                    {this.state.errorMsg}
+                                </Notification>
+                            </Container>
+                        </PanelBlock>
+                    </Panel>
+                    : ""
+                }
+            </div>
         );
     }
 
