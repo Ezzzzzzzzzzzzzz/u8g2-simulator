@@ -138,10 +138,61 @@ export class U8G2 {
     }
 
     drawLine(x0: number, y0: number, x1: number, y1: number) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x0, y0);
-        this.ctx.lineTo(x1, y1);
-        this.ctx.stroke();
+        // first draw the start/stop
+        this.drawPixel(x0, y0);
+        this.drawPixel(x1, y1);
+
+        // catch the pixel
+        if (x0 === x1 && y0 === y1) {
+            // we are done here
+            return;
+        }
+
+        // catch the VLine
+        if (x0 === x1) {
+            if (y0 < y1) {
+                this.drawVLine(x0, y0, y1 - y0);
+            } else {
+                this.drawVLine(x0, y1, y0 - y1);
+            }
+            return;
+        }
+
+        // catch the HLine
+        if (y0 === y1) {
+            if (x0 < x1) {
+                this.drawHLine(x0, y0, x1 - x0);
+            } else {
+                this.drawHLine(x1, y0, x0 - x1);
+            }
+            return;
+        }
+
+        const w = Math.abs(x1 - x0);
+        const s = w / Math.abs(y1 - y0);
+
+        if (x0 < x1) {
+            let y = 0;
+            for (let x = 0; x < w; x += s) {
+                this.drawHLine(x0 + x, y0 + y, s);
+                if (y0 < y1) {
+                    y++;
+                } else {
+                    y--;
+                }
+            }
+        }
+        if (x0 > x1) {
+            let y = 0;
+            for (let x = 0; x < w; x += s) {
+                this.drawHLine(x1 + x, y1 + y, s);
+                if (y0 > y1) {
+                    y++;
+                } else {
+                    y--;
+                }
+            }
+        }
     }
 
     drawPixel(x: number, y: number) {

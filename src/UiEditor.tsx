@@ -79,14 +79,19 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 "\n" +
                 "\nvoid draw(U8G2 u8g2) {" +
                 "\n    u8g2.setDrawColor(1);" +
+                "\n    u8g2.drawHLine(4,4,4);" +
                 "\n    u8g2.drawLine(10, 25, 15, 30);" +
                 "\n    u8g2.drawLine(15, 30, 35, 30);" +
                 "\n    u8g2.drawLine(35, 30, 40, 25);" +
+                "\n    u8g2.drawLine(64,32, 0, 0);" +
+                "\n    u8g2.drawLine(64,32, 128, 0);" +
+                "\n    u8g2.drawLine(64,32, 128, 64);" +
+                "\n    u8g2.drawLine(64,32, 0, 64);" +
                 "\n" +
                 "\n    drawBox(u8g2, 10, 10, 10, 10);" +
                 "\n    drawBox(u8g2, 30, 10, 10, 10);" +
                 "\n    u8g2.drawRBox(64,32,12, 24, 4);" +
-                "\n    u8g2.drawFrame(49,9,42,55);" +
+                "\n    //u8g2.drawFrame(49,9,42,55);" +
                 "\n    u8g2.drawXBM(50,10,41,4,[   0x00, 0x80, 0x0f, 0x00, 0x00, 0x01, 0x00, 0x60, 0x30, 0x00, 0x00, 0x01, 0x00, 0x18, 0x20, 0x00, 0x00, 0x01, 0x00, 0x04, 0x40, 0x00, 0x00, 0x01," +
                 "\n                                0x00, 0x0f, 0x80, 0x00, 0x00, 0x01, 0x80, 0x13, 0x80, 0x00, 0x00, 0x01,   0xc0, 0x17, 0x3c, 0x01, 0x00, 0x01, 0xc0, 0x57, 0x4e, 0x01, 0x00, 0x01,]);" +
                 "\n}"
