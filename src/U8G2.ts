@@ -46,12 +46,15 @@ export class U8G2 {
         this.setDrawColor(this.display.resetColor);
         this.ctx.beginPath();
         this.ctx.rect(0, 0, this.display.width, this.display.height);
+        this.ctx.closePath();
         this.ctx.fill();
         this.setDrawColor(t);
     }
 
-    drawBox(x: number, y: number, w: number, h: number) {
-        this.ctx.fillRect(x, y, w, h);
+    drawBox(x0: number, y0: number, w: number, h: number) {
+        for (let y = y0; y < y0 + h; y++) {
+            this.drawHLine(x0, y, w);
+        }
     }
 
     private _drawCircleSection(x: number, y: number, x0: number, y0: number, option: CIRC_OPT) {
@@ -588,10 +591,10 @@ export class U8G2 {
         this.ctx.lineTo(x1, y1);
         this.ctx.lineTo(x2, y2);
         this.ctx.lineTo(x0, y0);
-        this.ctx.fill();
         this.ctx.closePath();
+        this.ctx.fill();
 
-        // try to destryo antialiasing by browser
+        // try to destroy antialiasing by browser
         this.drawLine(x0, y0, x1, y1);
         this.drawLine(x1, y1, x2, y2);
         this.drawLine(x2, y2, x0, y0);

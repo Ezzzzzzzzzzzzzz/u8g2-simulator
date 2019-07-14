@@ -31,6 +31,10 @@ $blue: #00979d;
     padding-left: 10px;
 }
 
+.small-input {
+    width: 80px !important;
+}
+
 @import "../node_modules/bulma/bulma";
 
 @import "../node_modules/font-awesome/scss/font-awesome";

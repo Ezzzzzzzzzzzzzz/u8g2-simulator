@@ -2,7 +2,7 @@ import * as React from "react";
 import {
     Panel, PanelHeading,
     PanelBlock, Notification, Container, Icon, Dropdown, DropdownTrigger,
-    Button, DropdownItem, DropdownContent, DropdownMenu, Column, Columns, Tile, Box, Title
+    Button, DropdownItem, DropdownContent, DropdownMenu, Column, Columns, Tile, Box, Title, Input
 } from "bloomer";
 import MonacoEditor from "react-monaco-editor";
 import { U8G2 } from "./U8G2";
@@ -17,6 +17,10 @@ interface UiEditorState {
     lcdReady: boolean;
     errorMsg: string;
     displayDropdownActive: boolean;
+    loopDropdownActive: boolean;
+    fps: number;
+    counter: number;
+    loop: boolean;
 }
 
 const oled128x64: Display = {
@@ -74,7 +78,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     constructor(props: {}) {
         super(props);
         this.state = {
-            code: "" +
+            code: "uint8_t helper = 0;" +
                 "\nvoid draw(U8G2 u8g2) {" +
                 "\n    u8g2.setDrawColor(1);" +
                 "\n    u8g2.drawPixel(1, 0);" +
@@ -88,10 +92,16 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
             codeEditor: null,
             display: oled128x64,
             displayDropdownActive: false,
+            loopDropdownActive: false,
             lcdReady: false,
-            errorMsg: ""
+            errorMsg: "",
+            loop: false,
+            counter: 0,
+            fps: 15
         };
         this.toggleDisplaySelector = this.toggleDisplaySelector.bind(this);
+        this.toggleLoopSelector = this.toggleLoopSelector.bind(this);
+        this.loop = this.loop.bind(this);
     }
 
     componentDidMount() {
@@ -101,11 +111,14 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     setDisplay(d: Display) {
         this.toggleDisplaySelector();
         this.setState({ display: d, lcdReady: false });
-        setTimeout(() => this.onCodeChange(this.state.code), 100);
     }
 
     toggleDisplaySelector() {
         this.setState(prevState => ({ displayDropdownActive: !prevState.displayDropdownActive }));
+    }
+
+    toggleLoopSelector() {
+        this.setState(prevState => ({ loopDropdownActive: !prevState.loopDropdownActive }));
     }
 
     transpile(code: string) {
@@ -115,18 +128,18 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
         lines = lines.map(line => {
             if (line.startsWith("void")) {
-                line = line.replace(new RegExp("void", "g"), "function");
-                line = line.replace(new RegExp("U8G2 u8g2", "g"), "u8g2");
-                line = line.replace(new RegExp("u*int\d*[_t]* ", "g"), "");
-                line = line.replace(new RegExp("float ", "g"), "");
-                line = line.replace(new RegExp("double ", "g"), "");
+                line = line.replace(/void /g, "function ");
+                line = line.replace(/U8G2 u8g2/g, "u8g2");
+                line = line.replace(/u?int((8|16|32)_t)? /g, "");
+                line = line.replace(/float /g, "");
+                line = line.replace(/double /g, "");
             } else {
-                line = line.replace(new RegExp("u*int\d*[_t]* ", "g"), "var ");
-                line = line.replace(new RegExp("float ", "g"), "var ");
-                line = line.replace(new RegExp("double ", "g"), "");
+                line = line.replace(/u?int((8|16|32)_t)? /g, "var ");
+                line = line.replace(/float /g, "var ");
+                line = line.replace(/double /g, "var ");
             }
-            line = line.replace(new RegExp("(U8G2_[a-zA-Z0-9_-]*)", "g"), "\"$1\"");
-            line = line.replace(new RegExp("(u8g2_font_[a-zA-Z0-9_-]*)", "g"), "\"$1\"");
+            line = line.replace(/(U8G2_[a-zA-Z0-9_-]*)/g, "\"$1\"");
+            line = line.replace(/(u8g2_font_[a-zA-Z0-9_-]*)/g, "\"$1\"");
 
             return line;
         });
@@ -181,10 +194,9 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
             const u8g2: U8G2 = new U8G2(this.ctx, this.state.display);
             const transpiled = this.transpile(this.state.code);
-            // console.log(transpiled);
             try {
 
-                const result = eval("(function() { " + transpiled + "return draw;})");
+                const result = eval("(function() { var counter = " + this.state.counter + "; " + transpiled + "return draw;})");
                 if (result) {
                     result()(u8g2);
                     this.setState({ errorMsg: "" });
@@ -212,7 +224,29 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
     onCodeChange = (updatedCode: string) => {
         this.setState({ code: updatedCode });
+    }
+
+    loop() {
+        console.log("loop", this.state.counter);
+
+        this.setState(prev => ({ counter: prev.counter + 1 }));
         this.redraw();
+        if (this.state.loop) {
+            setTimeout(this.loop, 1000 / this.state.fps);
+        } else {
+            this.setState({ counter: 0 });
+        }
+
+    }
+    onLoopChange = () => {
+        if (!this.state.loop) {
+            setTimeout(this.loop, 250);
+        }
+        this.setState(prevState => ({ loop: !prevState.loop }));
+    }
+
+    onFpsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        this.setState({ fps: parseInt(e.target.value, 10) });
     }
 
     renderDisplay = () => {
@@ -220,9 +254,6 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
             <div>
                 <Panel>
                     <PanelHeading><Icon className="fa fa-tv" /> Display ({this.state.display.name})</PanelHeading>
-                    <PanelBlock>
-                        {this.renderDisplaySelector()}
-                    </PanelBlock>
                     <PanelBlock>
                         <Tile isAncestor>
                             <Tile isSize={4} isVertical isParent>
@@ -276,20 +307,50 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                         </Tile>
                     </PanelBlock>
                 </Panel>
-                {this.state.errorMsg ?
-                    <Panel>
-                        <PanelHeading>Error</PanelHeading>
-                        <PanelBlock>
-                            <Container className="padLeft">
-                                <Notification>
-                                    {this.state.errorMsg}
-                                </Notification>
-                            </Container>
-                        </PanelBlock>
-                    </Panel>
-                    : ""
-                }
+
             </div>
+        );
+    }
+
+    renderDisplaySelector = () => {
+        return (
+            <Dropdown isActive={this.state.displayDropdownActive}>
+                <DropdownTrigger>
+                    <Button onClick={this.toggleDisplaySelector} isOutlined aria-haspopup="true" aria-controls="dropdown-menu">
+                        <Icon className="fa fa-tv" isSize="small" />
+                        <span>{this.state.display.name}</span>
+                        <Icon className="fa fa-angle-down" isSize="small" />
+                    </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                    <DropdownContent>
+                        {
+                            displays.map(d => <DropdownItem key={d.name} onClick={() => this.setDisplay(d)}>{d.name}</DropdownItem>
+                            )
+                        }
+                    </DropdownContent>
+                </DropdownMenu>
+            </Dropdown >
+        );
+    }
+
+    renderLoopEditor = () => {
+        return (
+            <Dropdown isActive={this.state.loopDropdownActive}>
+                <DropdownTrigger>
+                    <Button isOutlined aria-haspopup="true" aria-controls="dropdown-menu">
+                        <Icon onChange={this.onLoopChange} className="fa fa-play" />
+                        <span onClick={this.onLoopChange} >Loop {this.state.counter > 0 ? "(" + this.state.counter + ")" : ""}</span>
+                        <Icon onClick={this.toggleLoopSelector} className="fa fa-angle-down" />
+                    </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                    <DropdownContent>
+                        <DropdownItem>FPS:</DropdownItem>
+                        <DropdownItem><Input type="text" placeholder="fps" value={this.state.fps} className="small-input" onChange={this.onFpsChange} /></DropdownItem>
+                    </DropdownContent>
+                </DropdownMenu>
+            </Dropdown>
         );
     }
 
@@ -297,6 +358,11 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
         return (
             <Panel style={{ marginTop: "10px" }}>
                 <PanelHeading><Icon className="fa fa-code" /> Code (Syntax: C++) (Do not paste from 3rd parties <Icon className="fa fa-warning" />)</PanelHeading>
+                <PanelBlock>
+                    {this.renderDisplaySelector()}
+                    <Button onClick={() => this.redraw()}><Icon className="fa fa-cogs" />&nbsp;Run Once</Button>
+                    {this.renderLoopEditor()}
+                </PanelBlock>
                 <PanelBlock>
                     {/* <Label></Label> */}
                     <MonacoEditor
@@ -322,41 +388,35 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
     renderDocumentation = () => {
         return (
-            <Panel>
-                <PanelHeading><Icon className="fa fa-file" /> Documentation</PanelHeading>
-                <PanelBlock>The following functions are supported:</PanelBlock>
-                <PanelBlock>
-                    <br />
-                    <ul>
-                        {
-                            Object.getOwnPropertyNames(U8G2.prototype).sort().filter(p => p !== "constructor" && !p.startsWith("_")).map(p => {
-                                return <li key={p}><a href={"https://github.com/olikraus/u8g2/wiki/u8g2reference#" + p} target="_blank">{p}</a></li>;
-                            })
-                        }
-                    </ul>
-                </PanelBlock>
-            </Panel>
-        );
-    }
-
-    renderDisplaySelector = () => {
-        return (
-            <Dropdown isActive={this.state.displayDropdownActive}>
-                <DropdownTrigger>
-                    <Button onClick={this.toggleDisplaySelector} isOutlined aria-haspopup="true" aria-controls="dropdown-menu">
-                        <span>Select</span>
-                        <Icon className="fa fa-angle-down" isSize="small" />
-                    </Button>
-                </DropdownTrigger>
-                <DropdownMenu>
-                    <DropdownContent>
-                        {
-                            displays.map(d => <DropdownItem key={d.name} onClick={() => this.setDisplay(d)}>{d.name}</DropdownItem>
-                            )
-                        }
-                    </DropdownContent>
-                </DropdownMenu>
-            </Dropdown >
+            <div>
+                <Panel>
+                    <PanelHeading><Icon className="fa fa-file" /> Documentation</PanelHeading>
+                    <PanelBlock>The following functions are supported:</PanelBlock>
+                    <PanelBlock>
+                        <br />
+                        <ul>
+                            {
+                                Object.getOwnPropertyNames(U8G2.prototype).sort().filter(p => p !== "constructor" && !p.startsWith("_")).map(p => {
+                                    return <li key={p}><a href={"https://github.com/olikraus/u8g2/wiki/u8g2reference#" + p} target="_blank">{p}</a></li>;
+                                })
+                            }
+                        </ul>
+                    </PanelBlock>
+                </Panel>
+                {this.state.errorMsg ?
+                    <Panel>
+                        <PanelHeading>Error</PanelHeading>
+                        <PanelBlock>
+                            <Container className="padLeft">
+                                <Notification>
+                                    {this.state.errorMsg}
+                                </Notification>
+                            </Container>
+                        </PanelBlock>
+                    </Panel>
+                    : ""
+                }
+            </div>
         );
     }
 
