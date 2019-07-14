@@ -54,7 +54,6 @@ export class U8G2 {
         this.ctx.fillRect(x, y, w, h);
     }
 
-
     private _drawCircleSection(x: number, y: number, x0: number, y0: number, option: CIRC_OPT) {
         if (option === "U8G2_DRAW_UPPER_RIGHT" || option === "U8G2_DRAW_ALL") {
             this.drawPixel(x0 + x, y0 - y);
@@ -256,7 +255,6 @@ export class U8G2 {
 
         stopy = rxrx2;
         stopy *= ry;
-
 
         while (stopx <= stopy) {
             this._drawEllipseSection(x, y, x0, y0, option);
@@ -537,7 +535,6 @@ export class U8G2 {
         let yl;
         let xr;
 
-
         xl = x;
         xl += r;
         yu = y;
@@ -577,7 +574,7 @@ export class U8G2 {
             hh = h;
             hh -= r;
             hh -= r;
-            //h--;
+            // h--;
             if (hh >= 3) {
                 hh -= 2;
                 this.drawBox(x, yu, w, hh);
@@ -586,6 +583,15 @@ export class U8G2 {
     }
 
     drawTriangle(x0: number, y0: number, x1: number, y1: number, x2: number, y2: number) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x0, y0);
+        this.ctx.lineTo(x1, y1);
+        this.ctx.lineTo(x2, y2);
+        this.ctx.lineTo(x0, y0);
+        this.ctx.fill();
+        this.ctx.closePath();
+
+        // try to destryo antialiasing by browser
         this.drawLine(x0, y0, x1, y1);
         this.drawLine(x1, y1, x2, y2);
         this.drawLine(x2, y2, x0, y0);

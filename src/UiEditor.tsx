@@ -73,7 +73,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
             code: "" +
                 "\nvoid draw(U8G2 u8g2) {" +
                 "\n    u8g2.setDrawColor(1);" +
-                "\n    u8g2.drawCircle(32, 32, 16);" +
+                "\n    u8g2.drawTriangle(0, 0, 32,5, 16,27);" +
                 "\n    u8g2.drawRFrame(32,0,64,24,9);" +
                 "\n    u8g2.drawRBox(32,32,64,24,5);" +
 
