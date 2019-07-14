@@ -7,6 +7,7 @@ import {
 import MonacoEditor from "react-monaco-editor";
 import { U8G2 } from "./U8G2";
 import { Display } from "./UiEditorApi";
+import { examples, UiExample, INTRO } from "./Examples";
 
 interface UiEditorState {
     code: string;
@@ -18,6 +19,7 @@ interface UiEditorState {
     errorMsg: string;
     displayDropdownActive: boolean;
     loopDropdownActive: boolean;
+    exampleDropdownActive: boolean;
     fps: number;
     counter: number;
     loop: boolean;
@@ -78,21 +80,14 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
     constructor(props: {}) {
         super(props);
         this.state = {
-            code: "uint8_t helper = 0;" +
-                "\nvoid draw(U8G2 u8g2) {" +
-                "\n    u8g2.setDrawColor(1);" +
-                "\n    u8g2.drawPixel(1, 0);" +
-                "\n    u8g2.drawPixel(3, 0);" +
-                "\n    u8g2.setFont(u8g2_font_timR16_tf);" +
-                "\n    u8g2.drawStr(10,16,\"hi\");" +
-                "\n}"
-            ,
+            code: INTRO.code,
             lastChange: Date.now(),
             saveEnabled: true,
             codeEditor: null,
             display: oled128x64,
             displayDropdownActive: false,
             loopDropdownActive: false,
+            exampleDropdownActive: false,
             lcdReady: false,
             errorMsg: "",
             loop: false,
@@ -101,6 +96,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
         };
         this.toggleDisplaySelector = this.toggleDisplaySelector.bind(this);
         this.toggleLoopSelector = this.toggleLoopSelector.bind(this);
+        this.toggleExampleSelector = this.toggleExampleSelector.bind(this);
         this.loop = this.loop.bind(this);
     }
 
@@ -119,6 +115,10 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
     toggleLoopSelector() {
         this.setState(prevState => ({ loopDropdownActive: !prevState.loopDropdownActive }));
+    }
+
+    toggleExampleSelector() {
+        this.setState(prevState => ({ exampleDropdownActive: !prevState.exampleDropdownActive }));
     }
 
     transpile(code: string) {
@@ -245,6 +245,10 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
         this.setState(prevState => ({ loop: !prevState.loop }));
     }
 
+    setExample = (example: UiExample) => {
+        this.setState({ code: example.code });
+    }
+
     onFpsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         this.setState({ fps: parseInt(e.target.value, 10) });
     }
@@ -334,6 +338,29 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
         );
     }
 
+    renderExampleSelector = () => {
+        // examples
+        return (
+            <Dropdown isActive={this.state.exampleDropdownActive}>
+                <DropdownTrigger>
+                    <Button onClick={this.toggleExampleSelector} isOutlined aria-haspopup="true" aria-controls="dropdown-menu">
+                        <Icon className="fa fa-file" isSize="small" />
+                        <span>Examples</span>
+                        <Icon className="fa fa-angle-down" isSize="small" />
+                    </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                    <DropdownContent>
+                        {
+                            examples.map(e => <DropdownItem key={e.name} onClick={() => this.setExample(e)}>{e.name}</DropdownItem>
+                            )
+                        }
+                    </DropdownContent>
+                </DropdownMenu>
+            </Dropdown >
+        );
+    }
+
     renderLoopEditor = () => {
         return (
             <Dropdown isActive={this.state.loopDropdownActive}>
@@ -362,6 +389,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                     {this.renderDisplaySelector()}
                     <Button onClick={() => this.redraw()}><Icon className="fa fa-cogs" />&nbsp;Run Once</Button>
                     {this.renderLoopEditor()}
+                    {this.renderExampleSelector()}
                 </PanelBlock>
                 <PanelBlock>
                     {/* <Label></Label> */}
