@@ -54,39 +54,115 @@ export class U8G2 {
         this.ctx.fillRect(x, y, w, h);
     }
 
-    drawCircle(x: number, y: number, r: number, opt: CIRC_OPT = "U8G2_DRAW_ALL", fill: boolean = false) {
-        this.ctx.beginPath();
-        if (fill) {
-            this.ctx.moveTo(x, y);
+
+    private drawCircleSection(x: number, y: number, x0: number, y0: number, option: CIRC_OPT) {
+        if (option === "U8G2_DRAW_UPPER_RIGHT" || option === "U8G2_DRAW_ALL") {
+            this.drawPixel(x0 + x, y0 - y);
+            this.drawPixel(x0 + y, y0 - x);
         }
-        switch (opt) {
-            case "U8G2_DRAW_UPPER_RIGHT":
-                this.ctx.arc(x, y, r, 1.5 * Math.PI, 0 * Math.PI);
-                break;
-            case "U8G2_DRAW_UPPER_LEFT":
-                this.ctx.arc(x, y, r, 1 * Math.PI, 1.5 * Math.PI);
-                break;
-            case "U8G2_DRAW_LOWER_LEFT":
-                this.ctx.arc(x, y, r, 0.5 * Math.PI, 1 * Math.PI);
-                break;
-            case "U8G2_DRAW_LOWER_RIGHT":
-                this.ctx.arc(x, y, r, 0 * Math.PI, 0.5 * Math.PI);
-                break;
-            case "U8G2_DRAW_ALL":
-                this.ctx.arc(x, y, r, 0, 2 * Math.PI);
-                break;
+
+        if (option === "U8G2_DRAW_UPPER_LEFT" || option === "U8G2_DRAW_ALL") {
+            this.drawPixel(x0 - x, y0 - y);
+            this.drawPixel(x0 - y, y0 - x);
         }
-        if (fill) {
-            this.ctx.moveTo(x, y);
-            this.ctx.fill();
-        } else {
-            this.ctx.stroke();
+
+        if (option === "U8G2_DRAW_LOWER_LEFT" || option === "U8G2_DRAW_ALL") {
+            this.drawPixel(x0 + x, y0 + y);
+            this.drawPixel(x0 + y, y0 + x);
         }
-        this.ctx.closePath();
+
+        if (option === "U8G2_DRAW_LOWER_RIGHT" || option === "U8G2_DRAW_ALL") {
+            this.drawPixel(x0 - x, y0 + y);
+            this.drawPixel(x0 - y, y0 + x);
+        }
+
     }
 
-    drawDisk(x: number, y: number, r: number, opt: CIRC_OPT = "U8G2_DRAW_ALL") {
-        this.drawCircle(x, y, r, opt, true);
+    drawCircle(x0: number, y0: number, rad: number, option: CIRC_OPT = "U8G2_DRAW_ALL") {
+        let f;
+        let ddFx;
+        let ddFy;
+        let x;
+        let y;
+
+        f = 1;
+        f -= rad;
+        ddFx = 1;
+        ddFy = 0;
+        ddFy -= rad;
+        ddFy *= 2;
+        x = 0;
+        y = rad;
+
+        this.drawCircleSection(x, y, x0, y0, option);
+
+        while (x < y) {
+            if (f >= 0) {
+                y--;
+                ddFy += 2;
+                f += ddFy;
+            }
+            x++;
+            ddFx += 2;
+            f += ddFx;
+
+            this.drawCircleSection(x, y, x0, y0, option);
+        }
+    }
+
+    private drawDiskSection(x: number, y: number, x0: number, y0: number, option: CIRC_OPT) {
+        if (option === "U8G2_DRAW_UPPER_RIGHT" || option === "U8G2_DRAW_ALL") {
+            this.drawVLine(x0 + x, y0 - y, y + 1);
+            this.drawVLine(x0 + y, y0 - x, x + 1);
+        }
+
+        if (option === "U8G2_DRAW_UPPER_LEFT" || option === "U8G2_DRAW_ALL") {
+            this.drawVLine(x0 - x, y0 - y, y + 1);
+            this.drawVLine(x0 - y, y0 - x, x + 1);
+        }
+
+        if (option === "U8G2_DRAW_LOWER_LEFT" || option === "U8G2_DRAW_ALL") {
+            this.drawVLine(x0 + x, y0, y + 1);
+            this.drawVLine(x0 + y, y0, x + 1);
+        }
+
+        if (option === "U8G2_DRAW_LOWER_RIGHT" || option === "U8G2_DRAW_ALL") {
+            this.drawVLine(x0 - x, y0, y + 1);
+            this.drawVLine(x0 - y, y0, x + 1);
+        }
+
+    }
+
+    drawDisk(x0: number, y0: number, rad: number, option: CIRC_OPT = "U8G2_DRAW_ALL") {
+        let f;
+        let ddFx;
+        let ddFy;
+        let x;
+        let y;
+
+        f = 1;
+        f -= rad;
+        ddFx = 1;
+        ddFy = 0;
+        ddFy -= rad;
+        ddFy *= 2;
+        x = 0;
+        y = rad;
+
+        this.drawDiskSection(x, y, x0, y0, option);
+
+        while (x < y) {
+            if (f >= 0) {
+                y--;
+                ddFy += 2;
+                f += ddFy;
+            }
+            x++;
+            ddFx += 2;
+            f += ddFx;
+
+            this.drawDiskSection(x, y, x0, y0, option);
+        }
     }
 
     drawEllipse(x0: number, y0: number, rx: number, ry: number, opt: CIRC_OPT = "U8G2_DRAW_ALL", fill: boolean = false) {
@@ -204,6 +280,7 @@ export class U8G2 {
         d[2] = parseInt(hexColor.slice(5, 5 + 2), 16);
         d[3] = 255;
 
+        console.log(x, y);
         this.ctx.putImageData(id, x, y);
     }
 
