@@ -20,7 +20,7 @@ export const INTRO: UiExample = {
         "\n" +
         "\n    // this code gets eval(..)'ed in the background with an fake u8g2 instance mapped to the HTML5 Canvas above" +
         "\n}"
-}
+};
 
 const BATTERY_SIGNAL: UiExample = {
     name: "Battery/Signal",
