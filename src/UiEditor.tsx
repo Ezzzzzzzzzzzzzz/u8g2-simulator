@@ -65,7 +65,11 @@ const nokia5110: Display = {
 const displays = [oled128x64, oled128x32, nokia5110];
 
 export class UiEditor extends React.Component<{}, UiEditorState> {
-    canvas: CanvasRenderingContext2D | null = null;
+    ctx: CanvasRenderingContext2D | null = null;
+    canvas: HTMLCanvasElement | null = null;
+
+    canvasX2: HTMLCanvasElement | null = null;
+    canvasX4: HTMLCanvasElement | null = null;
 
     constructor(props: {}) {
         super(props);
@@ -73,10 +77,10 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
             code: "" +
                 "\nvoid draw(U8G2 u8g2) {" +
                 "\n    u8g2.setDrawColor(1);" +
-                "\n    u8g2.drawTriangle(0, 0, 32,5, 16,27);" +
-                "\n    u8g2.drawRFrame(32,0,64,24,9);" +
-                "\n    u8g2.drawRBox(32,32,64,24,5);" +
-
+                "\n    u8g2.drawPixel(1, 0);" +
+                "\n    u8g2.drawPixel(3, 0);" +
+                "\n    u8g2.setFont(u8g2_font_timR16_tf);" +
+                "\n    u8g2.drawStr(10,16,\"hi\");" +
                 "\n}"
             ,
             lastChange: Date.now(),
@@ -130,15 +134,54 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
         return lines.join("\n");
     }
 
-    redraw() {
-        if (this.canvas) {
-            const ctx = this.canvas;
-            ctx.fillStyle = this.state.display.getColorValue(this.state.display.resetColor);
-            ctx.fillRect(0, 0, this.state.display.width, this.state.display.height);
+    scaleUp(ctx: CanvasRenderingContext2D, scaledCtx: CanvasRenderingContext2D, w: number, h: number) {
+        let origImage = ctx.getImageData(0, 0, w, h);
+        let scaledImage = scaledCtx.getImageData(0, 0, w * 2, h * 2);
+        for (let y = 0; y < origImage.height; y++) {
+            for (let x = 0; x < origImage.width; x++) {
+                // get pixeldata (r,g,b,a)
+                let origOffset = (x: number, y: number) => {
+                    return (x + y * origImage.width) * 4;
+                };
 
-            const u8g2: U8G2 = new U8G2(ctx, this.state.display);
+                let r = origImage.data[origOffset(x, y) + 0];
+                let g = origImage.data[origOffset(x, y) + 1];
+                let b = origImage.data[origOffset(x, y) + 2];
+                let a = origImage.data[origOffset(x, y) + 3];
+
+                // manual 2x linear scale
+                scaledImage.data[(x * 2 + y * 2 * scaledImage.width) * 4 + 0] = r;
+                scaledImage.data[(x * 2 + y * 2 * scaledImage.width) * 4 + 1] = g;
+                scaledImage.data[(x * 2 + y * 2 * scaledImage.width) * 4 + 2] = b;
+                scaledImage.data[(x * 2 + y * 2 * scaledImage.width) * 4 + 3] = a;
+
+                scaledImage.data[((x * 2) + 1 + y * 2 * scaledImage.width) * 4 + 0] = r;
+                scaledImage.data[((x * 2) + 1 + y * 2 * scaledImage.width) * 4 + 1] = g;
+                scaledImage.data[((x * 2) + 1 + y * 2 * scaledImage.width) * 4 + 2] = b;
+                scaledImage.data[((x * 2) + 1 + y * 2 * scaledImage.width) * 4 + 3] = a;
+
+                scaledImage.data[(x * 2 + (y * 2 + 1) * scaledImage.width) * 4 + 0] = r;
+                scaledImage.data[(x * 2 + (y * 2 + 1) * scaledImage.width) * 4 + 1] = g;
+                scaledImage.data[(x * 2 + (y * 2 + 1) * scaledImage.width) * 4 + 2] = b;
+                scaledImage.data[(x * 2 + (y * 2 + 1) * scaledImage.width) * 4 + 3] = a;
+
+                scaledImage.data[((x * 2) + 1 + (y * 2 + 1) * scaledImage.width) * 4 + 0] = r;
+                scaledImage.data[((x * 2) + 1 + (y * 2 + 1) * scaledImage.width) * 4 + 1] = g;
+                scaledImage.data[((x * 2) + 1 + (y * 2 + 1) * scaledImage.width) * 4 + 2] = b;
+                scaledImage.data[((x * 2) + 1 + (y * 2 + 1) * scaledImage.width) * 4 + 3] = a;
+            }
+        }
+        scaledCtx.putImageData(scaledImage, 0, 0);
+    }
+
+    redraw() {
+        if (this.ctx) {
+            this.ctx.fillStyle = this.state.display.getColorValue(this.state.display.resetColor);
+            this.ctx.fillRect(0, 0, this.state.display.width, this.state.display.height);
+
+            const u8g2: U8G2 = new U8G2(this.ctx, this.state.display);
             const transpiled = this.transpile(this.state.code);
-            console.log(transpiled);
+            // console.log(transpiled);
             try {
 
                 const result = eval("(function() { " + transpiled + "return draw;})");
@@ -148,6 +191,21 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 }
             } catch (e) {
                 this.setState({ errorMsg: e.name + ":\n\n" + e.message });
+            }
+
+            if (this.canvasX2) {
+                let sCtx = this.canvasX2.getContext("2d");
+                if (sCtx) {
+
+                    this.scaleUp(this.ctx, sCtx, this.state.display.width, this.state.display.height);
+
+                    if (this.canvasX4) {
+                        let s4Ctx = this.canvasX4.getContext("2d");
+                        if (s4Ctx) {
+                            this.scaleUp(sCtx, s4Ctx, this.state.display.width * 2, this.state.display.height * 2);
+                        }
+                    }
+                }
             }
         }
     }
@@ -167,16 +225,27 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 <PanelBlock>
                     <canvas className="lcd-canvas" ref={c => {
                         if (c) {
-                            console.log("assigned canvas");
-                            this.canvas = c.getContext("2d");
-                            if (this.canvas && !this.state.lcdReady) {
-                                this.canvas.scale(1, 1);
+                            this.canvas = c;
+                            this.ctx = c.getContext("2d");
+                            if (this.ctx && !this.state.lcdReady) {
                                 this.setState({ lcdReady: true });
                             }
 
                         }
                     }
                     } width={this.state.display.width} height={this.state.display.height} />
+                    <canvas className="lcd-canvas-scaled" ref={c => {
+                        if (c) {
+                            this.canvasX2 = c;
+                        }
+                    }
+                    } width={this.state.display.width * 2} height={this.state.display.height * 2} />
+                    <canvas className="lcd-canvas-scaled" ref={c => {
+                        if (c) {
+                            this.canvasX4 = c;
+                        }
+                    }
+                    } width={this.state.display.width * 4} height={this.state.display.height * 4} />
                     {this.state.errorMsg ?
                         <Container className="padLeft">
                             <Notification>

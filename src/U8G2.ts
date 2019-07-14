@@ -601,7 +601,7 @@ export class U8G2 {
         this.font = adobeFontMapper(font);
     }
 
-    drawString(x: number, y: number, str: string) {
+    drawStr(x: number, y: number, str: string) {
         this.ctx.font = this.font;
         this.ctx.fillText(str, x, y);
     }

@@ -17,9 +17,17 @@ $blue: #00979d;
 
 
 .lcd-canvas {
-    border: 8px solid #225a94;
+    border: 2px solid #225a94;
     image-rendering: pixelated;
 }
+
+
+.lcd-canvas-scaled {
+    border: 7px solid #225a94;
+    margin: 1px;
+    image-rendering: pixelated;
+}
+
 
 .padLeft {
     padding-left: 10px;
