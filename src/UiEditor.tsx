@@ -253,7 +253,8 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                                                     this.canvasX2 = c;
                                                 }
                                             }
-                                            } width={this.state.display.width * 2} height={this.state.display.height * 2} />                                    </Box>
+                                            } width={this.state.display.width * 2} height={this.state.display.height * 2} />
+                                        </Box>
                                     )
                                 } />
                             </Tile>
@@ -294,8 +295,8 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
 
     renderCodeEditor = () => {
         return (
-            <Panel>
-                <PanelHeading><Icon className="fa fa-code" /> Code (C++)</PanelHeading>
+            <Panel style={{ marginTop: "10px" }}>
+                <PanelHeading><Icon className="fa fa-code" /> Code (Syntax: C++) (Do not paste from 3rd parties <Icon className="fa fa-warning" />)</PanelHeading>
                 <PanelBlock>
                     {/* <Label></Label> */}
                     <MonacoEditor
