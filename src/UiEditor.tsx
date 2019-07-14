@@ -83,10 +83,6 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 "\n    u8g2.drawLine(10, 25, 15, 30);" +
                 "\n    u8g2.drawLine(15, 30, 35, 30);" +
                 "\n    u8g2.drawLine(35, 30, 40, 25);" +
-                "\n    u8g2.drawLine(64,32, 0, 0);" +
-                "\n    u8g2.drawLine(64,32, 128, 0);" +
-                "\n    u8g2.drawLine(64,32, 128, 64);" +
-                "\n    u8g2.drawLine(64,32, 0, 64);" +
                 "\n" +
                 "\n    drawBox(u8g2, 10, 10, 10, 10);" +
                 "\n    drawBox(u8g2, 30, 10, 10, 10);" +
