@@ -259,7 +259,7 @@ export class U8G2 {
 
 
         while (stopx <= stopy) {
-            this._drawEllipseSection( x, y, x0, y0, option);
+            this._drawEllipseSection(x, y, x0, y0, option);
             x++;
             stopx += ryry2;
             err += xchg;
@@ -273,8 +273,111 @@ export class U8G2 {
         }
     }
 
-    drawFilledEllipse(x0: number, y0: number, rx: number, ry: number, opt: CIRC_OPT = "U8G2_DRAW_ALL") {
-        this.drawEllipse(x0, y0, rx, ry, opt, true);
+    _drawFilledEllipseSection(x: number, y: number, x0: number, y0: number, option: CIRC_OPT = "U8G2_DRAW_ALL") {
+        /* upper right */
+        if (option === "U8G2_DRAW_UPPER_RIGHT" || option === "U8G2_DRAW_ALL") {
+            this.drawVLine(x0 + x, y0 - y, y + 1);
+        }
+
+        /* upper left */
+        if (option === "U8G2_DRAW_UPPER_LEFT" || option === "U8G2_DRAW_ALL") {
+            this.drawVLine(x0 - x, y0 - y, y + 1);
+        }
+
+        /* lower right */
+        if (option === "U8G2_DRAW_LOWER_RIGHT" || option === "U8G2_DRAW_ALL") {
+            this.drawVLine(x0 + x, y0, y + 1);
+        }
+
+        /* lower left */
+        if (option === "U8G2_DRAW_LOWER_LEFT" || option === "U8G2_DRAW_ALL") {
+            this.drawVLine(x0 - x, y0, y + 1);
+        }
+    }
+
+    drawFilledEllipse(x0: number, y0: number, rx: number, ry: number, option: CIRC_OPT = "U8G2_DRAW_ALL") {
+        let x;
+        let y;
+        let xchg;
+        let ychg;
+        let err;
+        let rxrx2;
+        let ryry2;
+        let stopx;
+        let stopy;
+
+        rxrx2 = rx;
+        rxrx2 *= rx;
+        rxrx2 *= 2;
+
+        ryry2 = ry;
+        ryry2 *= ry;
+        ryry2 *= 2;
+
+        x = rx;
+        y = 0;
+
+        xchg = 1;
+        xchg -= rx;
+        xchg -= rx;
+        xchg *= ry;
+        xchg *= ry;
+
+        ychg = rx;
+        ychg *= rx;
+
+        err = 0;
+
+        stopx = ryry2;
+        stopx *= rx;
+        stopy = 0;
+
+        while (stopx >= stopy) {
+            this._drawFilledEllipseSection(x, y, x0, y0, option);
+            y++;
+            stopy += rxrx2;
+            err += ychg;
+            ychg += rxrx2;
+            if (2 * err + xchg > 0) {
+                x--;
+                stopx -= ryry2;
+                err += xchg;
+                xchg += ryry2;
+            }
+        }
+
+        x = 0;
+        y = ry;
+
+        xchg = ry;
+        xchg *= ry;
+
+        ychg = 1;
+        ychg -= ry;
+        ychg -= ry;
+        ychg *= rx;
+        ychg *= rx;
+
+        err = 0;
+
+        stopx = 0;
+
+        stopy = rxrx2;
+        stopy *= ry;
+
+        while (stopx <= stopy) {
+            this._drawFilledEllipseSection(x, y, x0, y0, option);
+            x++;
+            stopx += ryry2;
+            err += xchg;
+            xchg += ryry2;
+            if (2 * err + ychg > 0) {
+                y--;
+                stopy -= rxrx2;
+                err += ychg;
+                ychg += rxrx2;
+            }
+        }
     }
 
     drawFrame(x: number, y: number, w: number, h: number) {
@@ -364,7 +467,6 @@ export class U8G2 {
         d[2] = parseInt(hexColor.slice(5, 5 + 2), 16);
         d[3] = 255;
 
-        console.log(x, y);
         this.ctx.putImageData(id, x, y);
     }
 
