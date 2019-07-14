@@ -118,22 +118,23 @@ export class U8G2 {
     }
 
     drawFrame(x: number, y: number, w: number, h: number) {
-        this.ctx.rect(x, y, w, h);
-        this.ctx.stroke();
+        this.drawHLine(x, y, w);
+        this.drawHLine(x, y + h, w);
+
+        this.drawVLine(x, y, h);
+        this.drawVLine(x + w, y, h);
     }
 
     drawHLine(x: number, y: number, w: number) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y);
-        this.ctx.lineTo(x + w, y);
-        this.ctx.stroke();
+        for (let i = 0; i < w; i++) {
+            this.drawPixel(x + i, y);
+        }
     }
 
     drawVLine(x: number, y: number, h: number) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y);
-        this.ctx.lineTo(x, y + h);
-        this.ctx.stroke();
+        for (let i = 0; i < h; i++) {
+            this.drawPixel(x, y + i);
+        }
     }
 
     drawLine(x0: number, y0: number, x1: number, y1: number) {
@@ -144,16 +145,15 @@ export class U8G2 {
     }
 
     drawPixel(x: number, y: number) {
-        // todo: this is bad, because of the twos, i.e. it will break if a different scale is used
-        const id = this.ctx.createImageData(2, 2);
+        const id = this.ctx.createImageData(1, 1);
         const d = id.data;
         const hexColor = this.display.getColorValue(this.drawColor);
         d[0] = parseInt(hexColor.slice(1, 1 + 2), 16);
         d[1] = parseInt(hexColor.slice(3, 3 + 2), 16);
         d[2] = parseInt(hexColor.slice(5, 5 + 2), 16);
         d[3] = 255;
-        console.log(d);
-        this.ctx.putImageData(id, x * 2, y * 2);
+
+        this.ctx.putImageData(id, x, y);
     }
 
     drawRFrame(x: number, y: number, w: number, h: number, r: number) {
@@ -199,5 +199,55 @@ export class U8G2 {
         this.ctx.fillStyle = this.display.getColorValue(color);
         this.ctx.strokeStyle = this.display.getColorValue(color);
         this.drawColor = color;
+    }
+
+    getDisplayHeight() {
+        return this.display.height;
+    }
+
+    getDisplayWidth() {
+        return this.display.width;
+    }
+
+    getStrWidth(txt: string) {
+        return this.ctx.measureText(txt);
+    }
+
+    drawBitmap(x0: number, y0: number, cnt: number, h: number, bitmap: number[]) {
+        // cnt: Number of bytes of the bitmap in horizontal direction. The width of the bitmap is cnt*8.
+        // h: Height of the bitmap.
+
+        for (let x = 0; x < cnt; x++) {
+            for (let y = 0; y < h; y++) {
+
+                const bytes = (bitmap[x + y * cnt] + 256).toString(2);
+                for (let b = 0; b < 8; b++) {
+                    if (bytes[b + 1] === "1") {
+                        this.drawPixel(x * 8 + x0 + b, y + y0);
+                    }
+                }
+            }
+        }
+    }
+
+    drawXBM(x0: number, y0: number, w: number, h: number, bitmap: number[]) {
+        // first find out the real width of the xbm
+        const fixedW = w % 8 === 0 ? w : (Math.floor(w / 8) + 1) * 8;
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < fixedW; x++) {
+                if (x >= w) {
+                    break;
+                }
+                // get next byte
+                const byteIndex = Math.floor((x + y * fixedW) / 8);
+                const byte = bitmap[byteIndex];
+                const bits = (byte + 256).toString(2);
+
+                if (bits[8 - (x + y * fixedW) % 8] === "1") {
+                    this.drawPixel(x + x0, y + y0);
+                }
+            }
+        }
     }
 }
