@@ -74,7 +74,9 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                 "\nvoid draw(U8G2 u8g2) {" +
                 "\n    u8g2.setDrawColor(1);" +
                 "\n    u8g2.drawCircle(32, 32, 16);" +
-                "\n    u8g2.u8g2_draw_circle(66, 32, 16);" +
+                "\n    u8g2.drawRFrame(32,0,64,24,9);" +
+                "\n    u8g2.drawRBox(32,32,64,24,5);" +
+
                 "\n}"
             ,
             lastChange: Date.now(),
@@ -223,7 +225,7 @@ export class UiEditor extends React.Component<{}, UiEditorState> {
                     <br />
                     <ul>
                         {
-                            Object.getOwnPropertyNames(U8G2.prototype).sort().filter(p => p !== "constructor").map(p => {
+                            Object.getOwnPropertyNames(U8G2.prototype).sort().filter(p => p !== "constructor" && !p.startsWith("_")).map(p => {
                                 return <li key={p}><a href={"https://github.com/olikraus/u8g2/wiki/u8g2reference#" + p} target="_blank">{p}</a></li>;
                             })
                         }
